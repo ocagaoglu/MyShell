@@ -18,17 +18,17 @@ struct node *head1=NULL;
 struct node *head2=NULL;
 struct node *p1=NULL;
 
-void addnodeforpath(char ch) {
+void addnodeforpath(char* new_path) {
 if(head1==NULL) {
     struct node *New=(struct node *) malloc (sizeof(struct node));
     head1=New;
-    New->ch=ch;
+    New->str=new_path;
     New->next=NULL;
 }
 
 else {
     struct node *New=(struct node *) malloc (sizeof(struct node));
-    New->ch=ch;
+    New->str=new_path;
     New->next=NULL;
     for(p1=head1;p1->next!=NULL;p1=p1->next);
         p1->next=New;
@@ -48,7 +48,7 @@ void displayPaths()
         tmp = head1;
         while(tmp != NULL)
         {
-            printf(" Data = %c\n", tmp->ch);       // prints the data of current node
+            printf(" Data = %s\n", tmp->str);       // prints the data of current node
             tmp = tmp->next;                     // advances the position of current node
         }
     }
@@ -145,7 +145,7 @@ int GetNthFromHistory(struct node* head,
 }
 
 void PATH(){//geçici---> all path list
-  char string[] = "bash: /home/busra/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/mssql-tools/bin:/opt/mssql-tools/bin: No such file or directory";//geçici örnek
+  char string[] = getenv("PATH")
 	int init_size = strlen(string);
 	char delim[] = ":";
 
@@ -159,6 +159,8 @@ void PATH(){//geçici---> all path list
 }
 
 
+
+
 void main() {
 struct node** head = NULL;
 
@@ -170,10 +172,18 @@ struct node** head = NULL;
       PATH();
   }
 
+  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
+    addnodeforpath("/foo/bar");
+    //execv("mkdir","/foo/bar"); ile çalışcak
+  }
+  if (strcmp(args[0], "path - /foo/bar") == 0) { //if command is history
+
+  }
+
 
 
   /*if (strcmp(args[0], "history -i 9") == 0) { //if command is a spesific history index
-      execute(GetNth(head, 9)));
+      execv(GetNth(head, 9))); ile çalışcak
       deleteFromHistory(head,GetNth(head, 9));
       exit(0);
   }*/
