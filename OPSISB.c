@@ -16,7 +16,6 @@ struct node
 };
 struct node *head1=NULL;
 struct node *head2=NULL;
-
 struct node *p1=NULL;
 
 void addnodeforpath(char ch) {
@@ -67,18 +66,22 @@ void pushToHistory(struct node** head_ref, char* new_data)
 
 
 
+
 /* Given a reference (pointer to pointer) to the head of a list
 and a key, deletes the first occurrence of key in linked list */
 void deleteFromHistory(struct node **head_ref, char* key)
 {
 	// Store head node
-	struct node* temp = *head_ref, *prev;
+	  struct node* temp = *head_ref, *prev;
+    struct node* new_node = (struct node*) malloc(sizeof(struct node));
 
 	// If head node itself holds the key to be deleted
 	if (temp != NULL && strcmp(temp->str,key)==0)
 	{
-		*head_ref = temp->next; // Changed head
-		free(temp);			 // free old head
+		*head_ref = temp->next;
+    new_node->next = *head_ref; // Changed head
+    strcpy(new_node->str,key);
+		free(temp); // free old head
 		return;
 	}
 
@@ -97,18 +100,51 @@ void deleteFromHistory(struct node **head_ref, char* key)
 	prev->next = temp->next;
 
 	free(temp); // Free memory
+  new_node->next = *head_ref; // Changed head
+  strcpy(new_node->str,key);
 }
 
 void printList(struct node *node)
 {
-	while (node != NULL)
+  int i=0;
+	while (i<10)
 	{
 		printf("\n%s", node->str);
 		node = node->next;
+    i++;
 	}
 }
 
-void PATH(){//geçici
+// Takes head pointer of
+// the linked list and index
+// as arguments and return
+// data at index
+int GetNthFromHistory(struct node* head,
+                  int index)
+{
+
+    struct node* current = head;
+
+     // the index of the
+     // node we're currently
+     // looking at
+    int count = 0;
+    while (current != NULL)
+    {
+        if (count == index)
+            return(current->str);
+        count++;
+        current = current->next;
+    }
+
+    /* if we get to this line,
+       the caller was asking
+       for a non-existent element
+       so we assert fail */
+    assert(0);
+}
+
+void PATH(){//geçici---> all path list
   char string[] = "bash: /home/busra/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/mssql-tools/bin:/opt/mssql-tools/bin: No such file or directory";//geçici örnek
 	int init_size = strlen(string);
 	char delim[] = ":";
@@ -124,18 +160,42 @@ void PATH(){//geçici
 
 
 void main() {
+struct node** head = NULL;
+
+  if (strcmp(args[0], "history") == 0) { //if command is history
+    printList(head);
+  }
+
+  if (strcmp(args[0], "path") == 0) { //if command is history
+      PATH();
+  }
 
 
+
+  /*if (strcmp(args[0], "history -i 9") == 0) { //if command is a spesific history index
+      execute(GetNth(head, 9)));
+      deleteFromHistory(head,GetNth(head, 9));
+      exit(0);
+  }*/
+
+  //GetNthFromHistory(head, 9));
 
 
 
 /* Start with the empty list */
-struct node** head = NULL;
+
 
 pushToHistory(&head, "ar");
 pushToHistory(&head, "br");
 pushToHistory(&head, "ce");
 pushToHistory(&head, "dy");
+pushToHistory(&head, "ar");
+pushToHistory(&head, "br");
+pushToHistory(&head, "ce");
+pushToHistory(&head, "dy");
+pushToHistory(&head, "ar");
+pushToHistory(&head, "br");
+pushToHistory(&head, "ce");
 
 puts("Created Linked List: ");
 printList(head);
