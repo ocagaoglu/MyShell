@@ -145,16 +145,17 @@ int GetNthFromHistory(struct node* head,
 }
 
 void PATH(){//geçici---> all path list
-  char string[] = getenv("PATH")
-	int init_size = strlen(string);
-	char delim[] = ":";
+ 	char *path[100];
+	char *value=getenv("PATH");
+	char *token;
 
-	char *pointer = strtok(string, delim);
+	token = strtok(value,":");
+	path[0]=token;
 
-	while(pointer != NULL)
-	{
-		printf("\n'%s'\n", pointer);
-		pointer = strtok(NULL, delim);
+	for(int i=1;token!=NULL;i++){
+		path[i]=token;
+		token=strtok(NULL,":");
+		printf("%s\n",path[i]); //testing
 	}
 }
 
