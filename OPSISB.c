@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>
+#include <sys/wait.h>
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
 
@@ -11,7 +12,6 @@
 int i;
 struct node
 {
-    char ch;
     char str[100];
     struct node *next;
 };
@@ -19,7 +19,6 @@ struct node *head1=NULL;
 struct node *head2=NULL;
 struct node *p1=NULL;
 
-char *paths[100];
 
 char *searchCommand(char *command);
 
@@ -27,21 +26,39 @@ void addnodeforpath(char* new_path) {
 if(head1==NULL) {
     struct node *New=(struct node *) malloc (sizeof(struct node));
     head1=New;
-    New->str=new_path;
+    strcpy(New->str,new_path);
     New->next=NULL;
 }
 
 else {
     struct node *New=(struct node *) malloc (sizeof(struct node));
-    New->str=new_path;
+    strcpy(New->str,new_path);
     New->next=NULL;
     for(p1=head1;p1->next!=NULL;p1=p1->next);
         p1->next=New;
 }
 }
 
+char *paths[100];
+void PATH(){//geçici---> all path list
+
+	char *value=getenv("PATH");
+	char *token;
+
+	token = strtok(value,":");
+	paths[0]=token;
+
+	int i;
+	for(i=1;token!=NULL;i++){
+		paths[i]=token;
+		token=strtok(NULL,":");
+    addnodeforpath(paths[i]);
+		//printf("%s\n",paths[i]); //testing
+	}
+}
+
 struct node *p2=NULL;
-void displayPaths()
+/*void displayPaths()
 {
     struct node *tmp;
     if(head1 == NULL)
@@ -57,7 +74,7 @@ void displayPaths()
             tmp = tmp->next;                     // advances the position of current node
         }
     }
-}
+}*/
 
 
 
@@ -74,19 +91,15 @@ void pushToHistory(struct node** head_ref, char* new_data)
 
 /* Given a reference (pointer to pointer) to the head of a list
 and a key, deletes the first occurrence of key in linked list */
-void deleteFromHistory(struct node **head_ref, char* key)
+void changeFromHistory(struct node **head_ref, char* key)
 {
 	// Store head node
 	  struct node* temp = *head_ref, *prev;
-    struct node* new_node = (struct node*) malloc(sizeof(struct node));
 
 	// If head node itself holds the key to be deleted
 	if (temp != NULL && strcmp(temp->str,key)==0)
 	{
-		*head_ref = temp->next;
-    new_node->next = *head_ref; // Changed head
-    strcpy(new_node->str,key);
-		free(temp); // free old head
+
 		return;
 	}
 
@@ -103,16 +116,19 @@ void deleteFromHistory(struct node **head_ref, char* key)
 
 	// Unlink the node from linked list
 	prev->next = temp->next;
-
+  struct node* new_node = (struct node*) malloc(sizeof(struct node));
+  new_node->next= (*head_ref)->next;
+  (*head_ref)->next=new_node;
+  strcpy(new_node->str,(*head_ref)->str);
+  strcpy((*head_ref)->str,key);
 	free(temp); // Free memory
-  new_node->next = *head_ref; // Changed head
-  strcpy(new_node->str,key);
+
 }
 
 void printList(struct node *node)
 {
   int i=0;
-	while (i<10)
+	while (i<5)
 	{
 		printf("\n%s", node->str);
 		node = node->next;
@@ -124,7 +140,7 @@ void printList(struct node *node)
 // the linked list and index
 // as arguments and return
 // data at index
-int GetNthFromHistory(struct node* head,
+char* GetNthFromHistory(struct node* head,
                   int index)
 {
 
@@ -134,42 +150,28 @@ int GetNthFromHistory(struct node* head,
      // node we're currently
      // looking at
     int count = 0;
+    int control = 0;
     while (current != NULL)
     {
         if (count == index)
             return(current->str);
         count++;
         current = current->next;
+        control = 1;
     }
 
-    /* if we get to this line,
-       the caller was asking
-       for a non-existent element
-       so we assert fail */
-    assert(0);
-}
+     if(control==0){
+       printf("There are no index like this.");
+     }
+       control = 0;
 
-void PATH(){//geçici---> all path list
-
-	char *value=getenv("PATH");
-	char *token;
-
-	token = strtok(value,":");
-	paths[0]=token;
-
-	int i;
-	for(i=1;token!=NULL;i++){
-		paths[i]=token;
-		token=strtok(NULL,":");
-		//printf("%s\n",paths[i]); //testing
-	}
 }
 
 void execute(char *args[], int background) {
     pid_t pid;
     char *path = searchCommand(args[0]);
     pid = fork();
-	
+
 
     if (pid < 0) {
         perror("Couldn't create child!");
@@ -192,7 +194,7 @@ void execute(char *args[], int background) {
 char *searchCommand(char *command) {   //this function searches the command in every path in every environment
     DIR *dp = NULL;
     struct dirent *entry;
-    
+
     int i;
     for(i=0;paths[i]!=NULL;i++){
     	if ((dp = opendir(paths[i])) != NULL) {
@@ -204,32 +206,29 @@ char *searchCommand(char *command) {   //this function searches the command in e
             }
         }
 	}
-	
+
 	closedir(dp);
     return NULL;
 }
 
 
-
-
 void main() {
 struct node** head = NULL;
 
-  if (strcmp(args[0], "history") == 0) { //if command is history
-    printList(head);
-  }
 
-  if (strcmp(args[0], "path") == 0) { //if command is history
-      PATH();
-  }
+  //if (strcmp(args[0], "history") == 0) { //if command is history
+    //printList(head);  }
 
-  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
+  //if (strcmp(args[0], "path") == 0) { //if command is history
+    //  PATH();  }
+
+/*  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
     addnodeforpath("/foo/bar");
     //execv("mkdir","/foo/bar"); ile çalışcak
   }
   if (strcmp(args[0], "path - /foo/bar") == 0) { //if command is history
 
-  }
+  }*/
 
 
 
@@ -244,36 +243,36 @@ struct node** head = NULL;
 
 
 /* Start with the empty list */
-
-
 pushToHistory(&head, "ar");
 pushToHistory(&head, "br");
 pushToHistory(&head, "ce");
 pushToHistory(&head, "dy");
 pushToHistory(&head, "ar");
-pushToHistory(&head, "br");
-pushToHistory(&head, "ce");
-pushToHistory(&head, "dy");
-pushToHistory(&head, "ar");
-pushToHistory(&head, "br");
-pushToHistory(&head, "ce");
+pushToHistory(&head,  "ls /bin");
+//printf("%s\n", GetNthFromHistory(head, 0));
+
 
 puts("Created Linked List: ");
 printList(head);
-deleteFromHistory(&head, "dy");
+changeFromHistory(&head, "dy");
 puts("\nLinked List after Deletion of a path/dir: ");
 printList(head);
 PATH();
+addnodeforpath("/foo/bar");
+printf("\nPATH LIST:");
+for(p1=head1;p1!=NULL;p1=p1->next){
+    printf("\n%s",p1->str);}
+
 return 0;
 
 
-char ch,frm,to;
+/*char ch,frm,to;
 printf("Enter the string:\n");
 while((ch=getchar())!='\n')
     addnodeforpath(ch);
 for(p1=head1;p1!=NULL;p1=p1->next){
     printf("\n%c",p1->ch);}
-printf("\n------------------------");
+printf("\n------------------------");*/
 
 
 
