@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
 
@@ -17,6 +18,10 @@ struct node
 struct node *head1=NULL;
 struct node *head2=NULL;
 struct node *p1=NULL;
+
+char *paths[100];
+
+char *searchCommand(char *command);
 
 void addnodeforpath(char* new_path) {
 if(head1==NULL) {
@@ -145,18 +150,63 @@ int GetNthFromHistory(struct node* head,
 }
 
 void PATH(){//geçici---> all path list
- 	char *path[100];
+
 	char *value=getenv("PATH");
 	char *token;
 
 	token = strtok(value,":");
-	path[0]=token;
+	paths[0]=token;
 
-	for(int i=1;token!=NULL;i++){
-		path[i]=token;
+	int i;
+	for(i=1;token!=NULL;i++){
+		paths[i]=token;
 		token=strtok(NULL,":");
-		printf("%s\n",path[i]); //testing
+		//printf("%s\n",paths[i]); //testing
 	}
+}
+
+void execute(char *args[], int background) {
+    pid_t pid;
+    char *path = searchCommand(args[0]);
+    pid = fork();
+	
+
+    if (pid < 0) {
+        perror("Couldn't create child!");
+    } else if (pid == 0) {
+        if (path != NULL) {
+            strncat(path, "/", 1);
+            strncat(path, args[0], strlen(args[0]));
+            if (execv(path, args)) {
+                perror("Couldn't run the command!\n");
+            }
+        } else {
+            printf("There is no command like %s.\n", args[0]);
+        }
+        exit(0);
+    } else if (background == 0) {   //we only wait if it is a foreground process
+        wait(NULL);
+    }
+}
+
+char *searchCommand(char *command) {   //this function searches the command in every path in every environment
+    DIR *dp = NULL;
+    struct dirent *entry;
+    
+    int i;
+    for(i=0;paths[i]!=NULL;i++){
+    	if ((dp = opendir(paths[i])) != NULL) {
+            while ((entry = readdir(dp)) != NULL) {
+                if (strcmp(entry->d_name, command) == 0) {  //command found
+                    closedir(dp);
+                    return strndup(paths[i], strlen(paths[i]));  //returning it's pointer
+                }
+            }
+        }
+	}
+	
+	closedir(dp);
+    return NULL;
 }
 
 
