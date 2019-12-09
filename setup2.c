@@ -179,7 +179,7 @@ void addnodeforpath(char *new_path)
 }
 
 void PATH()
-{ //geçici---> all path list
+{ //ge�ici---> all path list
 
     char *value = getenv("PATH");
     char *token;
@@ -262,12 +262,10 @@ void changeFromHistory(struct node **head_ref, char *key)
 
 void printList(struct node *node)
 {
-    int i = 0;
-    while (i < 1)
+    while (node != NULL)
     {
-        printf("\n%s", node->str);
+        printf(" %s ", node->str);
         node = node->next;
-        i++;
     }
 }
 
@@ -307,7 +305,7 @@ char *GetNthFromHistory(struct node *head,
 
 int main(void)
 {
-    struct node **head = NULL;
+    struct node *head = NULL;
 
     char inputBuffer[MAX_LINE];   /*buffer to hold command entered */
     int background;               /* equals 1 if a command is followed by '&' */
@@ -322,88 +320,64 @@ int main(void)
 
         fflush(stdout);
         setup(inputBuffer, args, &background);
+        pushToHistory(&head, args[0]);
 
-        if (strcmp(args[0], "ls") == 0)
-        { //program terminates when user enters "exit"
-            pushToHistory(&head, args[0]);
-            execute(args, background);
+        if (strcmp(args[0], "cd") == 0)
+        {
+            //do something
+        }
+        else if (strcmp(args[0], "history") == 0)
+        {
+            struct node *temp = head;
+            printList(temp);
+        }
+        else if (strcmp(args[0], "path") == 0)
+        {
+            for (p1 = head1; p1 != NULL; p1 = p1->next)
+            {
+                printf("\n%s", p1->str);
+            }
         }
         else
         {
-            if (strcmp(args[0], "path") == 0)
-            { //program terminates when user enters "exit"
-                printf("\nPATH LIST:");
-                for (p1 = head1; p1 != NULL; p1 = p1->next)
-                {
-                    printf("\n%s", p1->str);
-                }
-                pushToHistory(&head, args[0]);
-                //printList(head);test
-            }
-            else if (strcmp(args[0], "clear") == 0)
-            { //program terminates when user enters "exit"
-                pushToHistory(&head, args[0]);
-            }
-
-            else if (strcmp(args[0], "history") == 0)
-            { //program terminates when user enters "exit"
-                printList(head);
-            }
-
-            else if (strcmp(args[0], "exit") == 0)
-            { //program terminates when user enters "exit" and there no backround process
-                pushToHistory(&head, args[0]);
-                if (background == 1)
-                {
-                    printf("there are background processes still running");
-                }
-                else
-                {
-                    printf("Bye\n");
-                    exit(0);
-                }
-            }
-            else
-            {
-                execute(args, background); //processes are created here
-            }
+            execute(args, background); //processes are created here
         }
+    }
 
-        /*setup() calls exit() when Control-D is entered */
+    /*setup() calls exit() when Control-D is entered */
 
-        /** the steps are:
+    /** the steps are:
               (1) fork a child process using fork()
               (2) the child process will invoke execv()
   (3) if background == 0, the parent will wait,
               otherwise it will invoke the setup() function again. */
-    }
+}
 
-    //if (strcmp(args[0], "history") == 0) { //if command is history
-    //printList(head);  }
+//if (strcmp(args[0], "history") == 0) { //if command is history
+//printList(head);  }
 
-    //if (strcmp(args[0], "path") == 0) { //if command is history
-    //  PATH();  }
+//if (strcmp(args[0], "path") == 0) { //if command is history
+//  PATH();  }
 
-    /*  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
+/*  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
     addnodeforpath("/foo/bar");
-    //execv("mkdir","/foo/bar"); ile çalışcak
+    //execv("mkdir","/foo/bar"); ile �aliscak
   }
   if (strcmp(args[0], "path - /foo/bar") == 0) { //if command is history
   }*/
 
-    /*if (strcmp(args[0], "history -i 9") == 0) { //if command is a spesific history index
-      execv(GetNth(head, 9))); ile çalışcak
+/*if (strcmp(args[0], "history -i 9") == 0) { //if command is a spesific history index
+      execv(GetNth(head, 9))); ile �aliscak
       deleteFromHistory(head,GetNth(head, 9));
       exit(0);
   }*/
 
-    //GetNthFromHistory(head, 9));
+//GetNthFromHistory(head, 9));
 
-    /*char ch,frm,to;
+/*char ch,frm,to;
 printf("Enter the string:\n");
 while((ch=getchar())!='\n')
     addnodeforpath(ch);
 for(p1=head1;p1!=NULL;p1=p1->next){
     printf("\n%c",p1->ch);}
 printf("\n------------------------");*/
-}
