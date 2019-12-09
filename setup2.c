@@ -1,13 +1,10 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>
 #include <sys/wait.h>
-
-
-
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
 
@@ -18,51 +15,65 @@ will become null-terminated, C-style strings. */
 char *paths[100];
 char *searchCommand(char *command);
 
-void execute(char *args[], int background) {
+void execute(char *args[], int background)
+{
     pid_t pid;
     char *path = searchCommand(args[0]);
     pid = fork();
 
-    if (pid < 0) {
+    if (pid < 0)
+    {
         perror("Couldn't create child!");
-    } else if (pid == 0) {
-        if (path != NULL) {
+    }
+    else if (pid == 0)
+    {
+        if (path != NULL)
+        {
             strncat(path, "/", 1);
             strncat(path, args[0], strlen(args[0]));
-            if (execv(path, args)) {
+            if (execv(path, args))
+            {
                 perror("Couldn't run the command!\n");
             }
         }
-         else {
+        else
+        {
             printf("There is no command like this\n");
         }
         exit(0);
-    } else if (background == 0) {   //we only wait if it is a foreground process
+    }
+    else if (background == 0)
+    { //we only wait if it is a foreground process
         wait(NULL);
     }
 }
 
-char *searchCommand(char *command) {   //this function searches the command in every path in every environment
+char *searchCommand(char *command)
+{ //this function searches the command in every path in every environment
     DIR *dp = NULL;
     struct dirent *entry;
 
     int i;
-    for(i=0;paths[i]!=NULL;i++){
-    	if ((dp = opendir(paths[i])) != NULL) {
-            while ((entry = readdir(dp)) != NULL) {
-                if (strcmp(entry->d_name, command) == 0) {  //command found
+    for (i = 0; paths[i] != NULL; i++)
+    {
+        if ((dp = opendir(paths[i])) != NULL)
+        {
+            while ((entry = readdir(dp)) != NULL)
+            {
+                if (strcmp(entry->d_name, command) == 0)
+                { //command found
                     closedir(dp);
-                    return strndup(paths[i], strlen(paths[i]));  //returning it's pointer
+                    return strndup(paths[i], strlen(paths[i])); //returning it's pointer
                 }
             }
         }
-	}
+    }
 
-	closedir(dp);
+    closedir(dp);
     return NULL;
 }
 
-void setup(char inputBuffer[], char *args[],int *background)
+void setup(char inputBuffer[], char *args[], int *background)
 {
     int length, /* # of characters in the command line */
         i,      /* loop index for accessing inputBuffer array */
@@ -72,7 +83,7 @@ void setup(char inputBuffer[], char *args[],int *background)
     ct = 0;
 
     /* read what the user enters on the command line */
-    length = read(STDIN_FILENO,inputBuffer,MAX_LINE);
+    length = read(STDIN_FILENO, inputBuffer, MAX_LINE);
 
     /* 0 is the system predefined file descriptor for stdin (standard input),
        which is the user's screen in this case. inputBuffer by itself is the
@@ -82,52 +93,58 @@ void setup(char inputBuffer[], char *args[],int *background)
 
     start = -1;
     if (length == 0)
-        exit(0);            /* ^d was entered, end of user command stream */
+        exit(0); /* ^d was entered, end of user command stream */
 
-/* the signal interrupted the read system call */
-/* if the process is in the read() system call, read returns -1
+    /* the signal interrupted the read system call */
+    /* if the process is in the read() system call, read returns -1
   However, if this occurs, errno is set to EINTR. We can check this  value
   and disregard the -1 value */
-    if ( (length < 0) && (errno != EINTR) ) {
+    if ((length < 0) && (errno != EINTR))
+    {
         perror("error reading the command");
-	exit(-1);           /* terminate with error code of -1 */
+        exit(-1); /* terminate with error code of -1 */
     }
 
-    for (i=0;i<length;i++){ /* examine every character in the inputBuffer */
+    for (i = 0; i < length; i++)
+    { /* examine every character in the inputBuffer */
 
-        switch (inputBuffer[i]){
-	    case ' ':
-	    case '\t' :               /* argument separators */
-		if(start != -1){
-                    args[ct] = &inputBuffer[start];    /* set up pointer */
-		    ct++;
-		}
-                inputBuffer[i] = '\0'; /* add a null char; make a C string */
-		start = -1;
-		break;
+        switch (inputBuffer[i])
+        {
+        case ' ':
+        case '\t': /* argument separators */
+            if (start != -1)
+            {
+                args[ct] = &inputBuffer[start]; /* set up pointer */
+                ct++;
+            }
+            inputBuffer[i] = '\0'; /* add a null char; make a C string */
+            start = -1;
+            break;
 
-            case '\n':                 /* should be the final char examined */
-		if (start != -1){
-                    args[ct] = &inputBuffer[start];
-		    ct++;
-		}
-                inputBuffer[i] = '\0';
-                args[ct] = NULL; /* no more arguments to this command */
-		break;
+        case '\n': /* should be the final char examined */
+            if (start != -1)
+            {
+                args[ct] = &inputBuffer[start];
+                ct++;
+            }
+            inputBuffer[i] = '\0';
+            args[ct] = NULL; /* no more arguments to this command */
+            break;
 
-	    default :             /* some other character */
-		if (start == -1)
-		    start = i;
-                if (inputBuffer[i] == '&'){
-		    *background  = 1;
-                    inputBuffer[i-1] = '\0';
-		}
-	} /* end of switch */
-     }    /* end of for */
-     args[ct] = NULL; /* just in case the input line was > 80 */
+        default: /* some other character */
+            if (start == -1)
+                start = i;
+            if (inputBuffer[i] == '&')
+            {
+                *background = 1;
+                inputBuffer[i - 1] = '\0';
+            }
+        }            /* end of switch */
+    }                /* end of for */
+    args[ct] = NULL; /* just in case the input line was > 80 */
 
-	for (i = 0; i <= ct; i++)
-		printf("args %d = %s\n",i,args[i]);
+    for (i = 0; i <= ct; i++)
+        printf("args %d = %s\n", i, args[i]);
 } /* end of setup routine */
 
 int i;
@@ -136,49 +153,51 @@ struct node
     char str[100];
     struct node *next;
 };
-struct node *head1=NULL;
-struct node *head2=NULL;
-struct node *p1=NULL;
+struct node *head1 = NULL;
+struct node *head2 = NULL;
+struct node *p1 = NULL;
 
+void addnodeforpath(char *new_path)
+{
+    if (head1 == NULL)
+    {
+        struct node *New = (struct node *)malloc(sizeof(struct node));
+        head1 = New;
+        strcpy(New->str, new_path);
+        New->next = NULL;
+    }
 
-
-
-
-void addnodeforpath(char* new_path) {
-if(head1==NULL) {
-    struct node *New=(struct node *) malloc (sizeof(struct node));
-    head1=New;
-    strcpy(New->str,new_path);
-    New->next=NULL;
+    else
+    {
+        struct node *New = (struct node *)malloc(sizeof(struct node));
+        strcpy(New->str, new_path);
+        New->next = NULL;
+        for (p1 = head1; p1->next != NULL; p1 = p1->next)
+            ;
+        p1->next = New;
+    }
 }
 
-else {
-    struct node *New=(struct node *) malloc (sizeof(struct node));
-    strcpy(New->str,new_path);
-    New->next=NULL;
-    for(p1=head1;p1->next!=NULL;p1=p1->next);
-        p1->next=New;
-}
-}
+void PATH()
+{ //geçici---> all path list
 
-void PATH(){//geçici---> all path list
+    char *value = getenv("PATH");
+    char *token;
 
-	char *value=getenv("PATH");
-	char *token;
+    token = strtok(value, ":");
+    paths[0] = token;
 
-	token = strtok(value,":");
-	paths[0]=token;
-
-	int i;
-	for(i=1;token!=NULL;i++){
-		paths[i]=token;
-		token=strtok(NULL,":");
-    addnodeforpath(paths[i]);
-		//printf("%s\n",paths[i]); //testing
-	}
+    int i;
+    for (i = 1; token != NULL; i++)
+    {
+        paths[i] = token;
+        token = strtok(NULL, ":");
+        addnodeforpath(paths[i]);
+        //printf("%s\n",paths[i]); //testing
+    }
 }
 
-struct node *p2=NULL;
+struct node *p2 = NULL;
 /*void displayPaths()
 {
     struct node *tmp;
@@ -197,196 +216,194 @@ struct node *p2=NULL;
     }
 }*/
 
-
-
-void pushToHistory(struct node** head_ref, char* new_data)
+void pushToHistory(struct node **head_ref, char *new_data)
 {
-    struct node* new_node = (struct node*) malloc(sizeof(struct node));
+    struct node *new_node = (struct node *)malloc(sizeof(struct node));
     strcpy(new_node->str, new_data);
     new_node->next = (*head_ref);
     (*head_ref) = new_node;
 }
 
-
-
-
 /* Given a reference (pointer to pointer) to the head of a list
 and a key, deletes the first occurrence of key in linked list */
-void changeFromHistory(struct node **head_ref, char* key)
+void changeFromHistory(struct node **head_ref, char *key)
 {
-	// Store head node
-	  struct node* temp = *head_ref, *prev;
+    // Store head node
+    struct node *temp = *head_ref, *prev;
 
-	// If head node itself holds the key to be deleted
-	if (temp != NULL && strcmp(temp->str,key)==0)
-	{
+    // If head node itself holds the key to be deleted
+    if (temp != NULL && strcmp(temp->str, key) == 0)
+    {
 
-		return;
-	}
+        return;
+    }
 
-	// Search for the key to be deleted, keep track of the
-	// previous node as we need to change 'prev->next'
-	while (temp != NULL && strcmp(temp->str,key)!=0)
-	{
-		prev = temp;
-		temp = temp->next;
-	}
+    // Search for the key to be deleted, keep track of the
+    // previous node as we need to change 'prev->next'
+    while (temp != NULL && strcmp(temp->str, key) != 0)
+    {
+        prev = temp;
+        temp = temp->next;
+    }
 
-	// If key was not present in linked list
-	if (temp == NULL) return;
+    // If key was not present in linked list
+    if (temp == NULL)
+        return;
 
-	// Unlink the node from linked list
-	prev->next = temp->next;
-  struct node* new_node = (struct node*) malloc(sizeof(struct node));
-  new_node->next= (*head_ref)->next;
-  (*head_ref)->next=new_node;
-  strcpy(new_node->str,(*head_ref)->str);
-  strcpy((*head_ref)->str,key);
-	free(temp); // Free memory
-
+    // Unlink the node from linked list
+    prev->next = temp->next;
+    struct node *new_node = (struct node *)malloc(sizeof(struct node));
+    new_node->next = (*head_ref)->next;
+    (*head_ref)->next = new_node;
+    strcpy(new_node->str, (*head_ref)->str);
+    strcpy((*head_ref)->str, key);
+    free(temp); // Free memory
 }
 
 void printList(struct node *node)
 {
-  int i=0;
-	while (i<1)
-	{
-		printf("\n%s", node->str);
-		node = node->next;
-    i++;
-	}
+    int i = 0;
+    while (i < 1)
+    {
+        printf("\n%s", node->str);
+        node = node->next;
+        i++;
+    }
 }
 
 // Takes head pointer of
 // the linked list and index
 // as arguments and return
 // data at index
-char* GetNthFromHistory(struct node* head,
-                  int index)
+char *GetNthFromHistory(struct node *head,
+                        int index)
 {
 
-    struct node* current = head;
+    struct node *current = head;
 
-     // the index of the
-     // node we're currently
-     // looking at
+    // the index of the
+    // node we're currently
+    // looking at
     int count = 0;
     int control = 0;
     while (current != NULL)
     {
-        if (count == index){
-            return(current->str);}
+        if (count == index)
+        {
+            return (current->str);
+        }
 
         count++;
         current = current->next;
         control = 1;
     }
 
-     if(control==0){
-       printf("There are no index like this.");
-     }
-       control = 0;
-
+    if (control == 0)
+    {
+        printf("There are no index like this.");
+    }
+    control = 0;
 }
 
+int main(void)
+{
+    struct node **head = NULL;
 
+    char inputBuffer[MAX_LINE];   /*buffer to hold command entered */
+    int background;               /* equals 1 if a command is followed by '&' */
+    char *args[MAX_LINE / 2 + 1]; /*command line arguments */
 
-int main(void) {
-  struct node** head = NULL;
+    PATH();
 
-  char inputBuffer[MAX_LINE]; /*buffer to hold command entered */
-  int background; /* equals 1 if a command is followed by '&' */
-  char *args[MAX_LINE/2 + 1]; /*command line arguments */
+    while (1)
+    {
+        background = 0;
+        printf("\nmyshell: ");
 
-  PATH();
+        fflush(stdout);
+        setup(inputBuffer, args, &background);
 
-  while (1){
-              background = 0;
-              printf("\nmyshell: ");
+        if (strcmp(args[0], "ls") == 0)
+        { //program terminates when user enters "exit"
+            pushToHistory(&head, args[0]);
+            execute(args, background);
+        }
+        else
+        {
+            if (strcmp(args[0], "path") == 0)
+            { //program terminates when user enters "exit"
+                printf("\nPATH LIST:");
+                for (p1 = head1; p1 != NULL; p1 = p1->next)
+                {
+                    printf("\n%s", p1->str);
+                }
+                pushToHistory(&head, args[0]);
+                //printList(head);test
+            }
+            else if (strcmp(args[0], "clear") == 0)
+            { //program terminates when user enters "exit"
+                pushToHistory(&head, args[0]);
+            }
 
-  fflush(stdout);
-  setup(inputBuffer, args, &background);
+            else if (strcmp(args[0], "history") == 0)
+            { //program terminates when user enters "exit"
+                printList(head);
+            }
 
-  if (strcmp(args[0], "ls") == 0) { //program terminates when user enters "exit"
-   pushToHistory(&head, args[0]);
-     execute(args, background);
-    }
-                    else{
-                  if (strcmp(args[0], "path") == 0) { //program terminates when user enters "exit"
-                  printf("\nPATH LIST:");
-                  for(p1=head1;p1!=NULL;p1=p1->next){
-                      printf("\n%s",p1->str);}
-                      pushToHistory(&head, args[0]);
-                      //printList(head);test
-                  }
-                    else if (strcmp(args[0], "clear") == 0) { //program terminates when user enters "exit"
-                     pushToHistory(&head, args[0]);
-                      }
+            else if (strcmp(args[0], "exit") == 0)
+            { //program terminates when user enters "exit" and there no backround process
+                pushToHistory(&head, args[0]);
+                if (background == 1)
+                {
+                    printf("there are background processes still running");
+                }
+                else
+                {
+                    printf("Bye\n");
+                    exit(0);
+                }
+            }
+            else
+            {
+                execute(args, background); //processes are created here
+            }
+        }
 
-                  else if (strcmp(args[0], "history") == 0) { //program terminates when user enters "exit"
-                        printList(head);
-                    }
+        /*setup() calls exit() when Control-D is entered */
 
-                   else if (strcmp(args[0], "exit") == 0) { //program terminates when user enters "exit" and there no backround process
-                    pushToHistory(&head, args[0]);
-                     if(background==1){
-                       printf("there are background processes still running");}
-                     else{printf("Bye\n");
-                       exit(0);}
-                    }
-                    else{
-                        execute(args, background);   //processes are created here
-                    }
-
-              }
-
-              /*setup() calls exit() when Control-D is entered */
-
-
-
-
-              /** the steps are:
+        /** the steps are:
               (1) fork a child process using fork()
               (2) the child process will invoke execv()
   (3) if background == 0, the parent will wait,
               otherwise it will invoke the setup() function again. */
-  }
+    }
 
-
-
-
-  //if (strcmp(args[0], "history") == 0) { //if command is history
+    //if (strcmp(args[0], "history") == 0) { //if command is history
     //printList(head);  }
 
-  //if (strcmp(args[0], "path") == 0) { //if command is history
+    //if (strcmp(args[0], "path") == 0) { //if command is history
     //  PATH();  }
 
-/*  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
+    /*  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
     addnodeforpath("/foo/bar");
     //execv("mkdir","/foo/bar"); ile çalışcak
   }
   if (strcmp(args[0], "path - /foo/bar") == 0) { //if command is history
   }*/
 
-
-
-  /*if (strcmp(args[0], "history -i 9") == 0) { //if command is a spesific history index
+    /*if (strcmp(args[0], "history -i 9") == 0) { //if command is a spesific history index
       execv(GetNth(head, 9))); ile çalışcak
       deleteFromHistory(head,GetNth(head, 9));
       exit(0);
   }*/
 
-  //GetNthFromHistory(head, 9));
+    //GetNthFromHistory(head, 9));
 
-
-/*char ch,frm,to;
+    /*char ch,frm,to;
 printf("Enter the string:\n");
 while((ch=getchar())!='\n')
     addnodeforpath(ch);
 for(p1=head1;p1!=NULL;p1=p1->next){
     printf("\n%c",p1->ch);}
 printf("\n------------------------");*/
-
-
-
 }
