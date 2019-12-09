@@ -16,7 +16,6 @@ in the next command line; separate it into distinct arguments (using blanks as
 delimiters), and set the args array entries to point to the beginning of what
 will become null-terminated, C-style strings. */
 char *paths[100];
-void execute(char *args[], int);
 char *searchCommand(char *command);
 
 void execute(char *args[], int background) {
@@ -24,7 +23,6 @@ void execute(char *args[], int background) {
     char *path = searchCommand(args[0]);
     pid = fork();
 
-    printf("%s\npathhhhh  :  ",path );
     if (pid < 0) {
         perror("Couldn't create child!");
     } else if (pid == 0) {
@@ -95,7 +93,6 @@ void setup(char inputBuffer[], char *args[],int *background)
 	exit(-1);           /* terminate with error code of -1 */
     }
 
-	printf(">>%s<<",inputBuffer);
     for (i=0;i<length;i++){ /* examine every character in the inputBuffer */
 
         switch (inputBuffer[i]){
@@ -300,46 +297,47 @@ int main(void) {
   char inputBuffer[MAX_LINE]; /*buffer to hold command entered */
   int background; /* equals 1 if a command is followed by '&' */
   char *args[MAX_LINE/2 + 1]; /*command line arguments */
+
+  PATH();
+  
   while (1){
               background = 0;
               printf("\nmyshell: ");
 
   fflush(stdout);
   setup(inputBuffer, args, &background);
-  PATH();
 
 
                   if (strcmp(args[0], "path") == 0) { //program terminates when user enters "exit"
-                  PATH();
                   printf("\nPATH LIST:");
                   for(p1=head1;p1!=NULL;p1=p1->next){
                       printf("\n%s",p1->str);}
                       pushToHistory(&head, args[0]);
                       //printList(head);test
                   }
-                  if (strcmp(args[0], "ls") == 0) { //program terminates when user enters "exit"
+                  else if (strcmp(args[0], "ls") == 0) { //program terminates when user enters "exit"
                    pushToHistory(&head, args[0]);
                     }
-                    if (strcmp(args[0], "clear") == 0) { //program terminates when user enters "exit"
+                    else if (strcmp(args[0], "clear") == 0) { //program terminates when user enters "exit"
                      pushToHistory(&head, args[0]);
                       }
 
-                  if (strcmp(args[0], "history") == 0) { //program terminates when user enters "exit"
+                  else if (strcmp(args[0], "history") == 0) { //program terminates when user enters "exit"
                         printf("hello");
                     }
-                    /*if(strcmp(args[0], "history") == 0 && strcmp(args[1], "-i") == 0){
-                       changeFromHistory(&head,GetNthFromHistory(head,args[2]));
-                    }*/
 
-                   if (strcmp(args[0], "exit") == 0) { //program terminates when user enters "exit" and there no backround process
+                   else if (strcmp(args[0], "exit") == 0) { //program terminates when user enters "exit" and there no backround process
                     pushToHistory(&head, args[0]);
                      if(background==1){
                        printf("there are background processes still running");}
                      else{printf("Bye\n");
                        exit(0);}
-}
+                    }
+                    else{
+                        execute(args, background);   //processes are created here
+                    }
 
-      execute(args, background);   //processes are created here
+      
 
               /*setup() calls exit() when Control-D is entered */
 
