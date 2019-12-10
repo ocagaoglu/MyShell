@@ -161,14 +161,36 @@ else {
 }
 }
 
-void deletenodeFromPath(struct node *node_ptr)
-{
-   struct node *temp = node_ptr->next;
-  strcpy(node_ptr->str,temp->str);
-   node_ptr->next = temp->next;
-   free(temp);
-}
+void deleteItem(char* item){
+   struct node *temp, *previous;
+   temp = head1;
 
+
+   // First, locate the node that contains the item.
+   for ( ; temp->next != NULL; temp = temp->next )
+   {
+      if(strcmp(item, temp->str)==0)
+      {
+         break;
+      }
+      previous = temp;
+   }
+
+   // Now take care of deleting it.
+   if ( temp != NULL )
+   {
+      if ( temp == head1 )
+      {
+         head1 = temp->next;
+      }
+      else
+      {
+         previous->next = temp->next;
+      }
+
+      free(temp);
+   }
+}
 void PATH(){//geçici---> all path list
 
 	char *value=getenv("PATH");
@@ -298,7 +320,8 @@ char* GetNthFromHistory(struct node* head,
        control = 0;
 
 }
-
+char arg[100];
+int n = 0;
 
 
 int main(void) {
@@ -307,7 +330,6 @@ int main(void) {
   char inputBuffer[MAX_LINE]; /*buffer to hold command entered */
   int background; /* equals 1 if a command is followed by '&' */
   char *args[MAX_LINE/2 + 1]; /*command line arguments */
-
   PATH();
 
   while (1){
@@ -316,21 +338,46 @@ int main(void) {
 
   fflush(stdout);
   setup(inputBuffer, args, &background);
-  pushToHistory(&head, args[0]);
 
 
+  while(args[n]!= NULL){
+    strcat(arg,args[n]);
+    strcat(arg," ");
+    n++;
+  }
 
 
                   if (strcmp(args[0], "path") == 0) { //program terminates when user enters "exit"
                        if(args[1]==NULL){
+                          pushToHistory(&head, "path");
                      printf("\nPATH LIST:");
                   for(p1=head1;p1!=NULL;p1=p1->next){
                       printf("\n%s",p1->str);}}
-                      else if(args[1] != NULL){
+
+                      else if(strcmp(args[1],"+")==0){
                           addnodeforpath(args[2]);
-                          printf("\nPATH LIST:");
+                           printf("\nPATH LIST:");
                           for(p1=head1;p1!=NULL;p1=p1->next){
                               printf("\n%s",p1->str);}
+                              char add1[100];
+                              strcat(add1,"path +");
+                              strcat(add1," ");
+                              strcat(add1,args[2]);
+                          pushToHistory(&head,add1);
+                          *add1= '\0';
+
+                        }
+                        else if(strcmp(args[1],"-")==0){
+                            deleteItem(args[2]);
+                            printf("\nPATH LIST:");
+                           for(p1=head1;p1!=NULL;p1=p1->next){
+                               printf("\n%s",p1->str);}
+                               char add2[100];
+                               strcat(add2,"path -");
+                               strcat(add2," ");
+                               strcat(add2,args[2]);
+                           pushToHistory(&head,add2);
+                           *add2 = '\0';
                         }
 
                   }
@@ -341,12 +388,12 @@ int main(void) {
                   else if (strcmp(args[0], "history") == 0) { //program terminates when user enters "exit"
                         if(args[1]!=NULL){
                       changeFromHistory(&head,GetNthFromHistory(head,atoi(args[2])));//çağırılan komutu listenin en başına taşır
-                      char *str;
-                      str = GetNthFromHistory(head,atoi(args[2]));
+                      char *strng;
+                      strng = GetNthFromHistory(head,atoi(args[2]));
                       char delim[] = " ";
-                      char *ptr = strtok(str, delim);
+                      char *ptr = strtok(strng, delim);
                       char *path = searchCommand(ptr);
-                      execv(path,NULL);
+                      execv(path,args);
                         }
                         else{
                           //struct node *temp = head;
@@ -362,6 +409,10 @@ int main(void) {
                     }
                     else{
                         execute(args, background);   //processes are created here
+                        if(args[1] != NULL){
+                        pushToHistory(&head, arg);}
+                        else{
+                        pushToHistory(&head, args[0]);}
                     }
 
 
