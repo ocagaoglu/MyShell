@@ -448,7 +448,15 @@ int main(void)
         }
         else if (strcmp(args[0], "cd") == 0)
         {
-            //do something
+            pushToHistory(&head, "cd");
+            if (args[1] == NULL)
+            {
+                printf("Enter a directory to use cd command!\n");
+            }
+            else if (chdir(args[1]) == -1)
+            { //chdir changes directory
+                printf("No directory like \"%s\".\n", args[1]);
+            }
         }
         else if (strcmp(args[0], "history") == 0)
         { //program terminates when user enters "exit"
