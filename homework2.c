@@ -18,6 +18,18 @@ char *searchCommand(char *command);
 char arg[100];
 int n = 0;
 int ioType = 0;
+int i;
+
+struct node
+{
+    char str[100];
+    struct node *next;
+};
+
+struct node *head1 = NULL;
+struct node *head2 = NULL;
+struct node *p1 = NULL;
+struct node *p2 = NULL;
 
 void execute(char *args[], int background)
 {
@@ -147,19 +159,7 @@ void setup(char inputBuffer[], char *args[], int *background)
     }                /* end of for */
     args[ct] = NULL; /* just in case the input line was > 80 */
 
-    for (i = 0; i <= ct; i++)
-        printf("args %d = %s\n", i, args[i]);
 } /* end of setup routine */
-
-int i;
-struct node
-{
-    char str[100];
-    struct node *next;
-};
-struct node *head1 = NULL;
-struct node *head2 = NULL;
-struct node *p1 = NULL;
 
 void addnodeforpath(char *new_path)
 {
@@ -213,7 +213,7 @@ void deleteItem(char *item)
     }
 }
 void PATH()
-{ //geçici---> all path list
+{
 
     char *value = getenv("PATH");
     char *token;
@@ -227,28 +227,8 @@ void PATH()
         paths[i] = token;
         token = strtok(NULL, ":");
         addnodeforpath(paths[i]);
-        //printf("%s\n",paths[i]); //testing
     }
 }
-
-struct node *p2 = NULL;
-/*void displayPaths()
-{
-    struct node *tmp;
-    if(head1 == NULL)
-    {
-        printf(" List is empty.");
-    }
-    else
-    {
-        tmp = head1;
-        while(tmp != NULL)
-        {
-            printf(" Data = %s\n", tmp->str);       // prints the data of current node
-            tmp = tmp->next;                     // advances the position of current node
-        }
-    }
-}*/
 
 void pushToHistory(struct node **head_ref, char *new_data)
 {
@@ -340,6 +320,34 @@ int searchIO(char *args[])
                 return -1;
             }
         }
+        else if (strcmp(args[i], "<") == 0)
+        {
+
+            if (strcmp(args[i + 1], "file.in") == 0)
+            {
+                args[i] = "myfile.txt";
+                args[i + 1] = NULL;
+                return 3;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (strcmp(args[i], "2>") == 0) //place holder
+        {
+
+            if (strcmp(args[i + 1], "file.out") == 0)
+            {
+                args[i] = NULL;
+                args[i + 1] = NULL;
+                return 4;
+            }
+            else
+            {
+                return -1;
+            }
+        }
     }
     return 0;
 }
@@ -348,8 +356,7 @@ int searchIO(char *args[])
 // the linked list and index
 // as arguments and return
 // data at index
-char *GetNthFromHistory(struct node *head,
-                        int index)
+char *GetNthFromHistory(struct node *head, int index)
 {
 
     struct node *current = head;
@@ -386,7 +393,7 @@ int main(void)
     char inputBuffer[MAX_LINE];   /*buffer to hold command entered */
     int background;               /* equals 1 if a command is followed by '&' */
     char *args[MAX_LINE / 2 + 1]; /*command line arguments */
-    PATH();
+    PATH();                       //initialize environment paths
 
     while (1)
     {
@@ -472,7 +479,6 @@ int main(void)
             }
             else
             {
-                //struct node *temp = head;
                 printList(head);
             }
         }
@@ -499,7 +505,7 @@ int main(void)
             {
                 //First, we're going to open a file
                 int saved_stdout = dup(1);
-                int file = open("myfile.txt", O_CREAT | O_TRUNC | O_WRONLY);
+                int file = open("myfile.txt", O_CREAT | O_TRUNC | O_RDWR);
                 if (file < 0)
                     return 1;
 
@@ -521,7 +527,8 @@ int main(void)
             else if (ioType == 2)
             {
                 //First, we're going to open a file
-                int file = open("myfile.txt", O_APPEND | O_CREAT | O_WRONLY);
+                int saved_stdout = dup(1);
+                int file = open("myfile.txt", O_APPEND | O_CREAT | O_RDWR);
                 if (file < 0)
                     return 1;
 
@@ -537,12 +544,14 @@ int main(void)
                 execute(args, background); //processes are created here
 
                 //At the end the file has to be closed:
-                close(file);
+                dup2(saved_stdout, 1);
+                close(saved_stdout);
             }
             else if (ioType == 3)
             {
                 //First, we're going to open a file
-                int file = open("myfile.txt", O_APPEND | O_WRONLY);
+                int saved_stdout = dup(1);
+                int file = open("myfile.txt", O_RDWR);
                 if (file < 0)
                     return 1;
 
@@ -558,28 +567,12 @@ int main(void)
                 execute(args, background); //processes are created here
 
                 //At the end the file has to be closed:
-                close(file);
+                dup2(saved_stdout, 1);
+                close(saved_stdout);
             }
             else if (ioType == 4)
             {
-                //First, we're going to open a file
-                int file = open("myfile.txt", O_APPEND | O_WRONLY);
-                if (file < 0)
-                    return 1;
-
-                //Now we redirect standard output to the file using dup2
-                if (dup2(file, 1) < 0)
-                {
-                    close(file);
-                    return 1; // this can return 0 normally
-                }
-
-                //Now standard out has been redirected, we can write to
-                // the file
-                execute(args, background); //processes are created here
-
-                //At the end the file has to be closed:
-                close(file);
+                //yazılacak
             }
 
             if (args[1] != NULL)
@@ -591,42 +584,5 @@ int main(void)
                 pushToHistory(&head, args[0]);
             }
         }
-
-        /*setup() calls exit() when Control-D is entered */
-
-        /** the steps are:
-              (1) fork a child process using fork()
-              (2) the child process will invoke execv()
-  (3) if background == 0, the parent will wait,
-              otherwise it will invoke the setup() function again. */
     }
-
-    //if (strcmp(args[0], "history") == 0) { //if command is history
-    //printList(head);  }
-
-    //if (strcmp(args[0], "path") == 0) { //if command is history
-    //  PATH();  }
-
-    /*  if (strcmp(args[0], "path + /foo/bar") == 0) { //if command is history
-    addnodeforpath("/foo/bar");
-    //execv("mkdir","/foo/bar"); ile çalışcak
-  }
-  if (strcmp(args[0], "path - /foo/bar") == 0) { //if command is history
-  }*/
-
-    /*if (strcmp(args[0], "history -i 9") == 0) { //if command is a spesific history index
-      execv(GetNth(head, 9))); ile çalışcak
-      deleteFromHistory(head,GetNth(head, 9));
-      exit(0);
-  }*/
-
-    //GetNthFromHistory(head, 9));
-
-    /*char ch,frm,to;
-printf("Enter the string:\n");
-while((ch=getchar())!='\n')
-    addnodeforpath(ch);
-for(p1=head1;p1!=NULL;p1=p1->next){
-    printf("\n%c",p1->ch);}
-printf("\n------------------------");*/
 }
